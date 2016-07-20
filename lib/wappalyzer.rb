@@ -3,7 +3,7 @@
 require "wappalyzer/version"
 
 require 'net/http'
-require 'v8'
+require 'mini_racer'
 require 'json'
 
 Encoding.default_external = Encoding::UTF_8
@@ -25,7 +25,7 @@ module Wappalyzer
         body = resp.body.encode('UTF-8', :invalid => :replace, :undef => :replace)
       end
 
-      cxt = V8::Context.new
+      cxt = MiniRacer::Context.new
       cxt.load File.join(@realdir, 'js', 'wappalyzer.js')
       cxt.load File.join(@realdir, 'js', 'driver.js')
       data = {'host' => uri.hostname, 'url' => url, 'html' => body, 'headers' => headers}
