@@ -23,5 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "bundler", "~> 1.11"
   spec.add_dependency "rake", "~> 10.0"
   spec.add_dependency "rspec", "~> 3.0"
-  spec.add_dependency "therubyracer", "~> 0.12.2"
+  spec.add_dependency "mini_racer", "~> 0.1.4"
 end
