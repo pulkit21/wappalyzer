@@ -19,8 +19,11 @@ module Wappalyzer
 
     def analyze(url)
       uri, body, headers = URI(url), nil, {}
-      Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https', :open_timeout => 5) do |http|
-        resp = http.get(uri.request_uri)
+      Net::HTTP.start(uri.host, uri.port,
+                      :use_ssl => uri.scheme == 'https',
+                      :verify_mode => OpenSSL::SSL::VERIFY_NONE,
+                      :open_timeout => 5) do |http|
+        resp = http.get(uri.request_uri, "Accept-Encoding" => "none")
         resp.each_header{|k,v| headers[k.downcase] = v}
         body = resp.body.encode('UTF-8', :invalid => :replace, :undef => :replace)
       end
