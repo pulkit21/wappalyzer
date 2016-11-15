@@ -18,10 +18,6 @@ module Wappalyzer
       @categories, @apps = @json['categories'], @json['apps']
     end
 
-    def utf8_encoding(str)
-      str.encode('UTF-8', :invalid => :replace, :undef => :replace)
-    end
-
     def analyze(url)
       uri, body, headers = URI(url), nil, {}
       Net::HTTP.start(uri.host, uri.port,
@@ -34,7 +30,7 @@ module Wappalyzer
           resp = http.get(uri.request_uri, "Accept-Encoding" => "none")
         end
 
-        resp.each_header { |k,v| headers[k.downcase] = utf8_encoding(v) }
+        resp.each_header { |k,v| headers[utf8_encoding(k).downcase] = utf8_encoding(v) }
         body = utf8_encoding(resp.body)
       end
 
@@ -44,6 +40,12 @@ module Wappalyzer
       data = {'host' => uri.hostname, 'url' => url, 'html' => body, 'headers' => headers}
       output = cxt.eval("w.apps = #{@apps.to_json}; w.categories = #{@categories.to_json}; w.driver.data = #{data.to_json}; w.driver.init();")
       JSON.load(output)
+    end
+
+    private
+
+    def utf8_encoding(str)
+      str.encode('UTF-8', :invalid => :replace, :undef => :replace)
     end
   end
 end
