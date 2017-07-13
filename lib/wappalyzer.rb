@@ -5,6 +5,7 @@ require "wappalyzer/version"
 require 'net/http'
 require 'mini_racer'
 require 'json'
+require 'zlib'
 
 Encoding.default_external = Encoding::UTF_8
 
@@ -19,10 +20,18 @@ module Wappalyzer
 
     def analyze(url)
       uri, body, headers = URI(url), nil, {}
-      Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https', :open_timeout => 5) do |http|
-        resp = http.get(uri.request_uri)
-        resp.each_header{|k,v| headers[k.downcase] = v}
-        body = resp.body.encode('UTF-8', :invalid => :replace, :undef => :replace)
+      Net::HTTP.start(uri.host, uri.port,
+                      :use_ssl => uri.scheme == 'https',
+                      :verify_mode => OpenSSL::SSL::VERIFY_NONE,
+                      :open_timeout => 5) do |http|
+        begin
+          resp = http.get(uri.request_uri)
+        rescue Zlib::DataError
+          resp = http.get(uri.request_uri, "Accept-Encoding" => "none")
+        end
+
+        resp.each_header { |k,v| headers[utf8_encoding(k).downcase] = utf8_encoding(v) }
+        body = utf8_encoding(resp.body)
       end
 
       cxt = MiniRacer::Context.new
@@ -31,6 +40,12 @@ module Wappalyzer
       data = {'host' => uri.hostname, 'url' => url, 'html' => body, 'headers' => headers}
       output = cxt.eval("w.apps = #{@apps.to_json}; w.categories = #{@categories.to_json}; w.driver.data = #{data.to_json}; w.driver.init();")
       JSON.load(output)
+    end
+
+    private
+
+    def utf8_encoding(str)
+      str.encode('UTF-8', :invalid => :replace, :undef => :replace)
     end
   end
 end
